@@ -648,6 +648,61 @@
   let map = null; 
   let chantierData = null; 
   
+  // NOUVELLE FONCTION D'INITIALISATION DE LA CARTE
+  function initializeMap() {
+      if (typeof L === 'undefined') {
+          console.error("Leaflet n'est pas chargé.");
+          document.getElementById('map').innerHTML = `
+              <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                  <h2 style="font-size: 2.2rem;">Erreur critique</h2>
+                  <p style="font-size: 1.6rem;">La librairie cartographique Leaflet n'a pas pu être chargée. Vérifiez l'accès aux CDN.</p>
+              </div>
+          `;
+          return false;
+      }
+      
+      try {
+          if (map) { map.remove(); map = null; } // Nettoyage agressif au cas où
+          
+          map = L.map('map').setView([45.75, 4.85], 13.5);
+          
+          L.Path.mergeOptions({ smoothFactor: 1.0 });
+
+          // Tente une première invalidation de taille (très important pour les conteneurs flex)
+          map.invalidateSize(true);
+      
+          // FOND DE CARTE : CartoDB Positron (Blanc/Clair)
+          L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+            maxZoom: 18,
+            attribution: '© OpenStreetMap contributors, © CARTO'
+          }).addTo(map);
+
+          // Écouteur de clic sur la carte pour désélectionner
+          map.on('click', (e) => {
+              if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
+                  map.closePopup();
+                  selectLayer(null);
+              }
+          });
+          
+          // FIX Agressif : Assure que la taille est bonne après le chargement du fond de carte
+          map.on('baselayerchange', () => map.invalidateSize(true));
+          
+          return true;
+          
+      } catch (e) {
+          console.error("Erreur lors de l'initialisation de la carte Leaflet:", e);
+           document.getElementById('map').innerHTML = `
+              <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                  <h2 style="font-size: 2.2rem;">Erreur critique</h2>
+                  <p style="font-size: 1.6rem;">La carte n'a pas pu être chargée. (Erreur JS/initialisation).</p>
+              </div>
+          `;
+          return false;
+      }
+  }
+
+
   window.addEventListener('load', () => {
     // --------------------------------------------------------------------------------------------------------------------------------------
     // CONSTANTES ET MAPPING (inchangé)
@@ -687,7 +742,6 @@
     ];
     
     const DEFAULT_COLOR = '#999999'; 
-    const DEFAULT_ZOOM_LEVEL = 13.5; 
     const LYON_CENTER = [45.75, 4.85]; 
 
     const DATE_OPTIONS = [
@@ -708,59 +762,6 @@
     let activeDateValue = DATE_OPTIONS[0].value;
 
 
-    // --------------------------------------------------------------------------------------------------------------------------------------
-    // INITIALISATION DE LA CARTE (Robustesse ajoutée)
-    // --------------------------------------------------------------------------------------------------------------------------------------
-    
-    // Initialisation de la carte dans le conteneur ID
-    if (typeof L !== 'undefined') {
-        try {
-            map = L.map('map').setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
-            
-            // OPTIONS DE STYLE AJOUTÉES ICI
-            L.Path.mergeOptions({ smoothFactor: 1.0 });
-
-            // FIX WEBVIEW/iOS : Forcer l'invalidation de la taille immédiatement
-            map.invalidateSize(true);
-        
-            // FOND DE CARTE : CartoDB Positron (Blanc/Clair)
-            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
-              maxZoom: 18,
-              attribution: '© OpenStreetMap contributors, © CARTO'
-            }).addTo(map);
-
-            // FIX Agressif : Invalide la taille une fois le fond de carte chargé
-            map.on('baselayerchange', () => map.invalidateSize(true));
-            
-            // Écouteur de clic sur la carte pour désélectionner
-            map.on('click', (e) => {
-                if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
-                    map.closePopup();
-                    selectLayer(null);
-                }
-            });
-            
-        } catch (e) {
-            console.error("Erreur lors de l'initialisation de la carte Leaflet:", e);
-             document.getElementById('map').innerHTML = `
-                <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
-                    <h2 style="font-size: 2.2rem;">Erreur critique</h2>
-                    <p style="font-size: 1.6rem;">La carte n'a pas pu être chargée. (Erreur JS/initialisation).</p>
-                </div>
-            `;
-            return;
-        }
-
-    } else {
-        document.getElementById('map').innerHTML = `
-            <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
-                <h2 style="font-size: 2.2rem;">Erreur critique</h2>
-                <p style="font-size: 1.6rem;">La librairie cartographique Leaflet n'a pas pu être chargée. Vérifiez l'accès aux CDN.</p>
-            </div>
-        `;
-        return; 
-    }
-    
     // --------------------------------------------------------------------------------------------------------------------------------------
     // FONCTIONS D'UTILITÉ (inchangées)
     // --------------------------------------------------------------------------------------------------------------------------------------
@@ -1037,7 +1038,15 @@
     function createDateOptions() {
         const container = document.getElementById('time-filter');
         container.innerHTML = ''; 
-        DATE_OPTIONS.forEach(opt => {
+        const dateOptions = [
+            { value: 'today', label: 'Auj.' },
+            { value: '+1w', label: '1 sem.' },
+            { value: '+1m', label: '1 mois' },
+            { value: '+6m', label: '6 mois' },
+            { value: '+1y', label: '1 an' }
+        ];
+        
+        dateOptions.forEach(opt => {
             const div = document.createElement('div');
             div.className = 'date-option' + (opt.value === activeDateValue ? ' selected' : '');
             div.textContent = opt.label;
@@ -1084,7 +1093,7 @@
     };
 
     function filterMap(resetZoom = true) { 
-      if (!chantierData) return;
+      if (!chantierData || !map) return;
       
       map.closePopup();
       selectLayer(null); 
@@ -1174,7 +1183,7 @@
       } else if (resetZoom === false && currentMapBounds) {
         map.fitBounds(currentMapBounds, { animate: false });
       } else if (resetZoom) {
-        map.setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
+        map.setView(LYON_CENTER, 13.5);
       }
       
       // S'assurer que la carte est bien redimensionnée
@@ -1184,65 +1193,79 @@
     // --------------------------------------------------------------------------------------------------------------------------------------
     // INITIALISATION PRINCIPALE
     // --------------------------------------------------------------------------------------------------------------------------------------
-
-    loadOfficialCommunes().then(success => {
-        if (!success) {
-             console.warn("Attention: Impossible de charger les données de référence des communes.");
+    
+    // NOUVEAU: Initialisation de la carte dans un délai (évite les problèmes de taille d'iFrame)
+    setTimeout(() => {
+        if (!initializeMap()) {
+             // Si la carte n'a pas pu s'initialiser, on s'arrête là
+             return; 
         }
-        
-        createDateOptions();
-        
-        fetch(GEOJSON_URL)
-          .then(res => {
-            if (!res.ok) throw new Error('Erreur réseau GeoServer: ' + res.status);
-            return res.json();
-          })
-          .then(data => {
-            chantierData = data;
 
-            // Pré-calcul des propriétés statiques (optimisation)
-            chantierData.features.forEach(f => {
-                const p = f.properties;
-                p.nomchantier_standard = standardizeChantierType(p.nomchantier);
-                p.commune1_harmonisee = cleanCommune(p.commune1);
-                p.duree_jours = calculateDurationInDays(p); 
-            });
+        loadOfficialCommunes().then(success => {
+            if (!success) {
+                 console.warn("Attention: Impossible de charger les données de référence des communes.");
+            }
+            
+            createDateOptions();
+            
+            fetch(GEOJSON_URL)
+              .then(res => {
+                if (!res.ok) throw new Error('Erreur réseau GeoServer: ' + res.status);
+                return res.json();
+              })
+              .then(data => {
+                chantierData = data;
 
-            const select = document.getElementById('chantier-type-filter');
-            
-            let allTypes = [...new Set(data.features.map(f => f.properties.nomchantier_standard).filter(Boolean))];
-            let sortedTypes = allTypes.sort((a,b) => {
-                if (a === 'Travaux de voirie générale') return 1;
-                if (b === 'Travaux de voirie générale') return -1;
-                return a.localeCompare(b);
-            });
-            
-            sortedTypes.forEach(t => { 
-              const opt = document.createElement('option');
-              opt.value = t;
-              opt.textContent = t;
-              select.appendChild(opt);
-            });
+                // Pré-calcul des propriétés statiques (optimisation)
+                chantierData.features.forEach(f => {
+                    const p = f.properties;
+                    p.nomchantier_standard = standardizeChantierType(p.nomchantier);
+                    p.commune1_harmonisee = cleanCommune(p.commune1);
+                    p.duree_jours = calculateDurationInDays(p); 
+                });
 
-            createLegend();
-            filterMap(true); 
-            
-            // FIX iOS: Invalide la taille une dernière fois pour être sûr
-            setTimeout(() => map.invalidateSize(true), 500); 
-          })
-          .catch(err => {
-            console.error('Erreur :', err);
-            // Affiche un message d'erreur directement dans la zone de la carte
-            document.getElementById('map').innerHTML = `
-                <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
-                    <h2 style="font-size: 2.2rem;">Erreur de chargement des données</h2>
-                    <p style="font-size: 1.6rem;">Impossible de se connecter au serveur de la Métropole de Lyon. Veuillez réessayer plus tard.</p>
-                </div>
-            `;
-            updateProgressGauge(0);
-            document.getElementById('chantier-count').textContent = `0 chantiers affichés (Données indisponibles)`;
-          });
-    });
+                const select = document.getElementById('chantier-type-filter');
+                
+                let allTypes = [...new Set(data.features.map(f => f.properties.nomchantier_standard).filter(Boolean))];
+                let sortedTypes = allTypes.sort((a,b) => {
+                    if (a === 'Travaux de voirie générale') return 1;
+                    if (b === 'Travaux de voirie générale') return -1;
+                    return a.localeCompare(b);
+                });
+                
+                sortedTypes.forEach(t => { 
+                  const opt = document.createElement('option');
+                  opt.value = t;
+                  opt.textContent = t;
+                  select.appendChild(opt);
+                });
+
+                createLegend();
+                filterMap(true); 
+                
+                // FIX DÉFINITIF : S'assurer que la carte est bien redimensionnée une dernière fois après le chargement des données
+                setTimeout(() => {
+                    if (map) map.invalidateSize(true);
+                }, 100); 
+              })
+              .catch(err => {
+                console.error('Erreur :', err);
+                // Affiche un message d'erreur directement dans la zone de la carte
+                document.getElementById('map').innerHTML = `
+                    <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                        <h2 style="font-size: 2.2rem;">Erreur de chargement des données</h2>
+                        <p style="font-size: 1.6rem;">Impossible de se connecter au serveur de la Métropole de Lyon. Veuillez réessayer plus tard.</p>
+                    </div>
+                `;
+                updateProgressGauge(0);
+                document.getElementById('chantier-count').textContent = `0 chantiers affichés (Données indisponibles)`;
+                // Assure que les éléments du bas s'affichent même sans données
+                document.getElementById('legend-control').style.display = 'block';
+                document.getElementById('progress-gauge-module').style.display = 'block';
+                document.getElementById('chantier-count').style.display = 'block';
+              });
+        });
+    }, 100); // Laisse 100ms au DOM pour se stabiliser dans l'iFrame
 
     document.getElementById('chantier-type-filter').addEventListener('change', () => filterMap(false)); 
     document.getElementById('duration-filter').addEventListener('change', () => filterMap(false)); 
