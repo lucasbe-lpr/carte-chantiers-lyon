@@ -1,0 +1,1239 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Où en sont les chantiers perturbants de la Métropole de Lyon</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" defer></script>
+  
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet"/>
+  
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"/>
+
+
+  <style>
+    /* -------------------------------------------------------------------------------------------------------------------------------------- */
+    /* STYLE FINALISÉ INSPIRE DU MONDE (DA et Charte Graphique) */
+    /* -------------------------------------------------------------------------------------------------------------------------------------- */
+    
+    :root {
+      --lm-blue: #0E2757; 
+      --lm-light-grey: #E2E4E9; 
+      --lm-white: #FCFCFD; 
+      --lm-text-muted: #6A717B; 
+      --lm-dark-text: #383f4e; 
+      --lm-border-color: #E6E8EB; 
+      --red-vigilance: #E60000;
+      /* Ajout d'une couleur pour le chemin sélectionné */
+      --lm-selected-border: #F7931E; 
+    }
+
+    /* *************************************************************** */
+    /* ENCAPSULATION DES STYLES - CORRIGÉ POUR L'IFRAME */
+    /* *************************************************************** */
+    
+    #map-container-wrapper {
+        font-size: 62.5%; 
+        color: var(--lm-dark-text); 
+        box-sizing: border-box; 
+        
+        /* CORRECTION: Suppression des marges et de la bordure pour un remplissage iFrame parfait */
+        margin: 0; 
+        width: 100%; 
+        max-width: none; 
+        padding: 0; 
+        
+        box-shadow: none; 
+        border: none; 
+        border-radius: 4px; /* Optionnel: Maintien du border-radius si le conteneur a une couleur de fond */
+        background: var(--lm-white);
+        display: flex;
+        flex-direction: column;
+        overflow-x: hidden; 
+        position: relative; 
+        z-index: 10; 
+    }
+
+    /* FIX FONT ET BOX-SIZING */
+    #map-container-wrapper *, 
+    #map-container-wrapper *:before, 
+    #map-container-wrapper *:after {
+        box-sizing: inherit;
+        font-family: 'Roboto', sans-serif; 
+    }
+    
+    .lm-title {
+        font-family: Georgia, serif; 
+        font-size: 2.6rem; 
+        font-weight: 700;
+        margin: 0 0 0.8rem 0;
+        line-height: 1.2;
+        color: var(--lm-blue);
+    }
+    
+    .lm-header {
+      /* Padding par défaut (Desktop) */
+      padding: 20px 20px 15px 20px; 
+      border-bottom: 1px solid var(--lm-border-color); 
+    }
+
+    .lm-subtitle {
+      font-size: 1.5rem; 
+      font-weight: 400;
+      /* Marge réduite par rapport à la version précédente */
+      margin: 0 0 0.4rem 0; 
+      line-height: 1.4; 
+      color: var(--lm-text-muted);
+    }
+
+    .lm-validity {
+      font-size: 1.2rem; 
+      color: var(--lm-text-muted);
+      margin: 0;
+      line-height: 1.4; 
+    }
+
+    /* ------------------------------------------------------------------------------------- */
+    /* Filtres/Contrôles (Général) */
+    /* ------------------------------------------------------------------------------------- */
+    .lm-controls {
+      /* Padding par défaut (Desktop) */
+      padding: 1.5rem 2rem; 
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1.5rem 2rem; 
+      align-items: center;
+      border-bottom: 1px solid var(--lm-border-color);
+      background-color: var(--lm-white); 
+    }
+    
+    /* 🟢 Le premier groupe (Date d'observation) prend 100% de la largeur */
+    .lm-controls > .lm-control-group:first-child {
+        width: 100%;
+        justify-content: flex-start; 
+        flex-direction: row; 
+    }
+    
+    /* Les autres groupes doivent être flexibles */
+    .lm-controls > .lm-control-group:not(:first-child) {
+        flex-grow: 1; 
+        flex-basis: 0;
+        min-width: 250px; 
+    }
+
+    .lm-control-group {
+        display: flex;
+        align-items: center;
+        min-width: 0;
+        flex-shrink: 1; 
+    }
+    
+    .lm-control-group label {
+      font-size: 1.3rem;
+      font-weight: 500;
+      margin-right: 10px; 
+      white-space: nowrap; 
+      flex-shrink: 0; 
+    }
+    
+    /* Style pour la date exacte affichée */
+    .lm-control-group #current-date-display {
+        font-weight: 700;
+        color: var(--lm-blue);
+        margin-left: 5px;
+    }
+
+    .lm-control-group select {
+      padding: 5px 10px;
+      border: 1px solid var(--lm-light-grey);
+      border-radius: 4px;
+      background-color: white;
+      font-size: 1.3rem;
+      color: var(--lm-blue);
+      cursor: pointer;
+      -webkit-appearance: none;
+      -moz-appearance: none;
+      appearance: none; 
+      background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" fill="currentColor" viewBox="0 0 20 20"><path d="M5 6l5 5 5-5z"/></svg>');
+      background-repeat: no-repeat;
+      background-position: right 8px top 50%;
+      background-size: 10px;
+    }
+
+    /* ------------------------------------------------------------------------------------- */
+    /* PILULES DE DATE (Toggle Style Le Monde) - DESKTOP */
+    /* ------------------------------------------------------------------------------------- */
+    .date-options {
+        /* Inspiré de .lmui-tabs-wrapper */
+        border-radius: 30px; /* Grande courbure */
+        overflow: hidden;
+        flex-grow: 1;
+        max-width: none; 
+        flex-shrink: 1;
+        min-width: 0; 
+        display: flex;
+        flex-direction: row; 
+        align-items: center; 
+        
+        flex-wrap: nowrap; 
+        justify-content: flex-start;
+        
+        /* Style du wrapper */
+        background: var(--lm-light-grey); /* Fond pour les séparations */
+        border: 1px solid var(--lm-light-grey); 
+        box-shadow: none; 
+        
+        /* Padding et gap */
+        padding: 6px 8px; 
+        gap: 8px; /* Espace entre chaque pilule */
+    }
+    
+    .date-option {
+        display: flex;
+        justify-content: center; 
+        align-items: center;     
+        
+        /* Les pilules ne s'étirent plus, elles s'adaptent à leur contenu */
+        flex-grow: 0; 
+        flex-shrink: 0; 
+        flex-basis: auto;
+        
+        font-weight: 500; 
+        color: var(--lm-dark-text); 
+        cursor: pointer;
+        text-align: center;
+        transition: background-color 0.1s, color 0.1s, box-shadow 0.1s, opacity 0.1s;
+        position: relative;
+        white-space: nowrap; 
+        min-width: 0;
+        
+        /* Style de la pilule interne */
+        background-color: transparent;
+        padding: 6px 14px; /* Padding suffisant */
+        border-radius: 30px; /* Grande courbure */
+        font-size: 1.3rem; 
+        
+        margin: 0; 
+    }
+    
+    /* On retire les règles d'arrondis sur les extrémités car c'est le conteneur qui le gère */
+    .date-option:first-child,
+    .date-option:last-child { 
+        border-radius: 30px; 
+    }
+
+    /* On retire tous les séparateurs internes */
+    .date-option:not(:last-child) {
+        border-right: none; 
+    }
+    
+    /* État sélectionné (La pilule prend une couleur pleine) */
+    .date-option.selected {
+        color: white; 
+        background-color: var(--lm-blue); 
+        font-weight: 700; 
+        box-shadow: none; 
+    }
+    
+    .date-option:active:not(.selected),
+    .date-option:hover:not(.selected) {
+        background-color: #f0f4f9; /* Survol léger pour le feedback */
+        box-shadow: none; 
+    }
+
+    /* ------------------------------------------------------------------------------------- */
+    /* Styles spécifiques pour le Popup Leaflet (inchangé) */
+    /* ------------------------------------------------------------------------------------- */
+    
+    /* Supprime le pointeur du popup */
+    .leaflet-popup-tip-container {
+        display: none;
+    }
+
+    .leaflet-popup-content-wrapper {
+        margin-bottom: 0px !important;
+        border-radius: 6px; 
+    }
+    
+    /* ⭐️ AJOUT: Augmente la largeur maximale du popup sur PC */
+    .leaflet-popup-content {
+        max-width: 450px !important; 
+    }
+    
+    .leaflet-popup-content h3 {
+        font-size: 1.7rem;
+        font-weight: 700;
+        margin: 0 0 5px 0;
+        color: var(--lm-blue);
+        border-bottom: 2px solid var(--lm-border-color);
+        padding-bottom: 5px;
+        line-height: 1.2;
+    }
+    
+    .leaflet-popup-content p {
+        font-size: 1.3rem;
+        margin: 5px 0;
+        line-height: 1.5;
+    }
+    
+    /* ------------------------------------------------------------------------------------- */
+    /* Carte Leaflet (CORRIGÉ) */
+    /* ------------------------------------------------------------------------------------- */
+    #map-square-wrapper {
+        width: 100% !important;
+        /* Défaut pour desktop: hauteur fixe */
+        height: 70vh !important; 
+        min-height: 400px !important;
+        position: relative;
+    }
+    
+    #map {
+      height: 100% !important; 
+      width: 100% !important;
+      background-color: #f0f0f0; 
+      position: relative;
+      z-index: 1;
+    }
+    
+    .leaflet-control-container .leaflet-control-attribution {
+        font-size: 1.1rem; 
+        padding: 0 4px;
+        background: rgba(255, 255, 255, 0.85); 
+    }
+    
+    /* Style pour le tracé sélectionné */
+    .leaflet-pane .leaflet-overlay-pane path.selected-path {
+        border-color: var(--lm-selected-border) !important;
+        opacity: 0.9 !important;
+        stroke-width: 10px !important; 
+    }
+    
+    /* ------------------------------------------------------------------------------------- */
+    /* Légende, Compteur, Footer (inchangé) */
+    /* ------------------------------------------------------------------------------------- */
+    #legend-control {
+      /* Padding par défaut (Desktop) */
+      padding: 1.5rem 2rem 2rem 2rem;
+      background-color: var(--lm-white);
+      border-top: 1px solid var(--lm-border-color); 
+    }
+    
+    #legend-control h4 { display: none; }
+    
+    .legend-info {
+        font-size: 1.2rem; 
+        font-weight: 400; 
+        margin-bottom: 15px; 
+        color: var(--lm-text-muted); 
+    }
+
+    .legend-wrapper {
+        display: flex;
+        flex-wrap: wrap; 
+        gap: 15px; 
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      font-size: 1.3rem;
+      padding: 2px 5px; 
+      cursor: pointer;
+      border-radius: 3px;
+    }
+    
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      margin-right: 8px;
+      border: 1px solid #333;
+      flex-shrink: 0; 
+    }
+
+    #progress-gauge-module {
+        /* Padding par défaut (Desktop) */
+        padding: 1.2rem 2rem;
+        text-align: center;
+        border-top: 1px solid var(--lm-border-color);
+        font-size: 1.3rem;
+        color: var(--lm-blue);
+        overflow: hidden; 
+    }
+    
+    /* CORRECTION : Conteneur relatif pour un positionnement absolu fiable */
+    .progress-bar-wrap {
+      width: 100%;
+      height: 10px; 
+      background-color: #e2e4e9; 
+      border-radius: 5px;
+      margin: 0.5rem 0;
+      overflow: hidden;
+      position: relative; /* Clé pour le positionnement absolu */
+    }
+    
+    /* CORRECTION : Positionnement absolu pour respecter les limites du parent */
+    .progress-bar {
+        position: absolute; 
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 0%; 
+        transition: width 0.8s ease-out;
+    }
+    
+    #progress-value {
+        font-weight: 500;
+        margin-top: 5px; 
+    }
+    
+    #chantier-count {
+        font-weight: 500; 
+        font-size: 1.5rem;
+        text-align: center;
+        /* Padding/Margin par défaut (Desktop) */
+        margin: 1rem 0 0 0;
+        padding: 1rem 2rem; 
+        border-top: 1px solid var(--lm-border-color); 
+        color: var(--lm-dark-text); 
+    }
+    
+    .lm-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 1.1rem; 
+        /* Padding par défaut (Desktop) */
+        padding: 10px 20px; 
+        color: var(--lm-text-muted);
+        border-top: 1px solid var(--lm-border-color);
+        background-color: #fcfcfc; 
+    }
+
+    .lm-footer a {
+        color: var(--lm-blue); 
+        text-decoration: none; 
+        font-weight: 500;
+    }
+    
+    .lm-footer > div:last-child {
+        color: var(--lm-text-muted); 
+        font-size: 1.1rem;
+        font-style: italic;
+    }
+
+    /* ------------------------------------------------------------------------------------- */
+    /* RESPONSIVE DESIGN (Mobile) - AJUSTEMENTS POUR L'ÉQUILIBRE VISUEL */
+    /* ------------------------------------------------------------------------------------- */
+    @media (max-width: 768px) {
+        #map-container-wrapper {
+            margin: 0;
+            border-radius: 0;
+            border-left: none;
+            border-right: none;
+            border-bottom: none;
+        }
+        
+        /* 1. DENSITÉ MAXIMALE : Réduction du padding horizontal de 15px à 10px */
+        .lm-header, .lm-controls, #legend-control, #progress-gauge-module, #chantier-count, .lm-footer {
+            padding-left: 10px !important; 
+            padding-right: 10px !important; 
+        }
+        
+        /* 2. EN-TÊTE: RELAXATION LÉGÈRE DU SERRAGE VERTICAL */
+        .lm-header {
+            padding-top: 8px; 
+            padding-bottom: 6px; 
+        }
+        
+        .lm-title {
+            font-size: 2.0rem; 
+            margin-bottom: 0.4rem; 
+        }
+        .lm-subtitle {
+            font-size: 1.3rem; 
+            margin: 0 0 0.3rem 0; 
+            line-height: 1.3; 
+        }
+        .lm-validity {
+            font-size: 1.0rem; 
+            margin: 0; 
+            line-height: 1.3; 
+        }
+        
+        /* 3. HAUTEUR DE LA CARTE (CORRIGÉ) */
+        #map-square-wrapper {
+            /* Fixe une hauteur relative pour les mobiles */
+            height: 60vh !important; 
+            /* Min-height réduit pour les petits téléphones */
+            min-height: 300px !important; 
+            padding-bottom: 0 !important; 
+        }
+        
+        /* 4. CONTRÔLES (Filtres) */
+        .lm-controls {
+            gap: 6px; 
+            padding-top: 0.6rem; 
+            padding-bottom: 0.6rem; 
+        }
+        
+        /* 5. PILULES DE DATE (Empilement vertical) */
+        .lm-controls > .lm-control-group:first-child {
+            /* FIX AGRESSIF : FORCE LA COLONNE */
+            flex-direction: column !important; 
+            align-items: flex-start; /* Aligne l'étiquette à gauche */
+            justify-content: flex-start;
+        }
+        
+        /* AJOUT: Espace sous l'étiquette pour la séparer des pilules */
+        .lm-control-group label {
+            margin-bottom: 5px; 
+        }
+
+        .date-options {
+            /* Le conteneur sur mobile prend toute la largeur */
+            padding: 4px 6px; /* Padding ajusté */
+            border: 1px solid var(--lm-light-grey); /* Bordure légère */
+            background-color: var(--lm-light-grey);
+            border-radius: 30px; /* Conserver l'arrondi de la pilule */
+            flex-grow: 1; 
+            /* FIX AGRESSIF : FORCE LA PLEINE LARGEUR */
+            width: 100% !important; 
+            margin-top: 0; 
+            gap: 6px; /* Gap ajusté pour mobile */
+        }
+        
+        .date-option {
+             padding: 8px 6px; 
+             height: 100%;
+             flex-grow: 1; /* Permet aux pilules de s'étirer si nécessaire */
+             flex-basis: 0;
+             border-radius: 30px; 
+        }
+
+        /* On retire les séparateurs internes car le fond les délimite */
+        .date-option:not(:last-child) {
+            border-right: none; 
+        }
+        
+        .date-option.selected {
+             background-color: var(--lm-blue); 
+             color: white; 
+        }
+        
+        .date-option:active:not(.selected),
+        .date-option:hover:not(.selected) {
+             /* Couleur de survol plus visible sur le fond gris clair */
+             background-color: #cdd3dc; 
+        }
+
+        /* 6. COMPRESSION DE LA LÉGENDE */
+        .legend-info {
+            margin-bottom: 5px; 
+        }
+        
+        #legend-control {
+            padding-top: 0.6rem; 
+            padding-bottom: 0.8rem; 
+        }
+
+        .legend-wrapper {
+             gap: 6px 8px; 
+        }
+        
+        .legend-item {
+            font-size: 1.2rem; 
+            padding: 1px 3px; 
+        }
+
+        /* 7. FOOTER: ESPACEMENT VERTICAL */
+        .lm-footer {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 4px; 
+            padding-top: 6px; 
+            padding-bottom: 6px; 
+            
+            font-size: 1.0rem; 
+        }
+    }
+
+  </style>
+</head>
+<body>
+  
+  <div id="map-container-wrapper">
+    <div class="lm-header">
+      <h1 class="lm-title">Où en sont les chantiers perturbants de la Métropole de Lyon</h1>
+      <p class="lm-subtitle">Visualisation des travaux ayant un impact notable sur la circulation et les transports en commun.</p>
+      <p class="lm-validity">Données actualisées quotidiennement par la Métropole de Lyon.</p>
+    </div>
+    
+    <div class="lm-controls">
+      <div class="lm-control-group">
+        <label>Date d'observation : <span id="current-date-display">Aujourd'hui</span></label>
+        <div class="date-options" id="time-filter">
+            </div>
+      </div>
+      <div class="lm-control-group">
+        <label for="duration-filter">Durée :</label>
+        <select id="duration-filter" aria-label="Filtre de durée">
+          <option value="all">Toutes</option>
+          <option value="<3m">Moins de 3 mois</option>
+          <option value="3m-6m">3 à 6 mois</option>
+          <option value="6m-1y">6 mois à 1 an</option>
+          <option value=">1y">Plus d'un an</option>
+        </select>
+      </div>
+      <div class="lm-control-group">
+        <label for="chantier-type-filter">Projet :</label>
+        <select id="chantier-type-filter" aria-label="Filtre de type de projet">
+          <option value="all">Tous les types</option>
+        </select>
+      </div>
+    </div>
+    
+    <div id="map-square-wrapper">
+        <div id="map"></div>
+    </div>
+    
+    <div id="legend-control">
+      <h4>Avancement des travaux à la date sélectionnée</h4>
+      <div class="legend-info">(cliquez pour filtrer)</div>
+      <div class="legend-wrapper">
+      </div>
+    </div>
+    
+    <div id="progress-gauge-module">
+        <div><b>Avancement général</b></div>
+        <div class="progress-bar-wrap">
+            <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div id="progress-value">0%</div>
+    </div>
+    
+    <p id="chantier-count">0 chantiers affichés</p>
+    
+    <div class="lm-footer">
+        <div>
+            Données : <a href="https://data.grandlyon.com/" target="_blank">data.grandlyon.com</a>
+        </div>
+        <div>
+            <i style="font-style: italic;">Carte</i> <b>Lucas Bessonnat</b>
+        </div>
+    </div>
+  </div>
+
+
+  <script>
+  let map = null; 
+  let chantierData = null; 
+  
+  window.addEventListener('load', () => {
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // CONSTANTES ET MAPPING (inchangé)
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    const GEOJSON_URL =
+      'https://data.grandlyon.com/geoserver/metropole-de-lyon/ows?' +
+      'SERVICE=WFS&VERSION=2.0.0&request=GetFeature' +
+      '&typename=metropole-de-lyon:pvo_patrimoine_voirie.pvochantierperturbant' +
+      '&outputFormat=application/json&SRSNAME=EPSG:4326&sortBy=gid';
+
+    const OFFICIAL_COMMUNES_URL =
+        'https://data.grandlyon.com/geoserver/metropole-de-lyon/ows?' +
+        'SERVICE=WFS&VERSION=2.0.0&request=GetFeature' +
+        '&typename=metropole-de-lyon:adr_voie_lieu.adrcomgl_2024' +
+        '&outputFormat=application/json&SRSNAME=EPSG:4171&sortBy=gid';
+        
+    const TYPE_MAPPING = [
+      { regex: /bhns|trolleybus|bus\s*haut\s*niveau/i, standard: 'BHNS / Trolleybus' },
+      { regex: /metro|m\s*\d+/i, standard: 'Métro' },
+      { regex: /tramway|t\s*\d+|extension\s*ligne\s*t/i, standard: 'Tramway' },
+      { regex: /voie\s*lyonnaise|vl\s*\d+/i, standard: 'Voies Lyonnaises' },
+      { regex: /cyclable|piste\s*cyc|velo/i, standard: 'Aménagement cyclable' },
+      { regex: /pieton|trottoir/i, standard: 'Aménagement piéton' },
+      { regex: /eau\s*potable|assainissement|reseaux?\s*eaux?/i, standard: 'Réseaux d\'eau et assainissement' },
+      { regex: /gaz|electricite|chauffage|reseau\s*chaleur/i, standard: 'Réseaux d\'énergie' },
+      { regex: /fibre|telecom/i, standard: 'Réseaux télécom' },
+      { regex: /pont|viaduc|passage\s*inferieur|passerelle/i, standard: 'Ouvrage d\'art' },
+      { regex: /amenagement|renovation|rehabilitation|requalification|creation\s*voie|construction/i, standard: 'Aménagement / Rénovation urbaine' },
+      { regex: /travaux|voirie|maintenance|signalisation/i, standard: 'Travaux de voirie générale' }
+    ];
+
+    const STATUS_COLORS = [
+      { threshold: 0, color: '#9C1F1D', label: '0% - 25%' },
+      { threshold: 26, color: '#D1671D', label: '26% - 50%' },
+      { threshold: 51, color: '#ECB719', label: '51% - 75%' },
+      { threshold: 76, color: '#3E6232', label: '76% - 100%' }
+    ];
+    
+    const DEFAULT_COLOR = '#999999'; 
+    const DEFAULT_ZOOM_LEVEL = 13.5; 
+    const LYON_CENTER = [45.75, 4.85]; 
+
+    const DATE_OPTIONS = [
+        { value: 'today', label: 'Auj.' },
+        { value: '+1w', label: '1 sem.' },
+        { value: '+1m', label: '1 mois' },
+        { value: '+6m', label: '6 mois' },
+        { value: '+1y', label: '1 an' }
+    ];
+
+    // Variables globales
+    let geoJsonLayer = null;
+    let activeAvancementFilter = 'all';
+    let officialCommunesMap = new Map();
+    let officialCommunesLoaded = false;
+    let selectedLayer = null;
+    let currentMapBounds = null; 
+    let activeDateValue = DATE_OPTIONS[0].value;
+
+
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // INITIALISATION DE LA CARTE (Robustesse ajoutée)
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    
+    // Initialisation de la carte dans le conteneur ID
+    if (typeof L !== 'undefined') {
+        try {
+            map = L.map('map').setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
+            
+            // OPTIONS DE STYLE AJOUTÉES ICI
+            L.Path.mergeOptions({ smoothFactor: 1.0 });
+
+            // FIX WEBVIEW/iOS : Forcer l'invalidation de la taille immédiatement
+            map.invalidateSize(true);
+        
+            // FOND DE CARTE : CartoDB Positron (Blanc/Clair)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
+              maxZoom: 18,
+              attribution: '© OpenStreetMap contributors, © CARTO'
+            }).addTo(map);
+
+            // FIX Agressif : Invalide la taille une fois le fond de carte chargé
+            map.on('baselayerchange', () => map.invalidateSize(true));
+            
+            // Écouteur de clic sur la carte pour désélectionner
+            map.on('click', (e) => {
+                if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
+                    map.closePopup();
+                    selectLayer(null);
+                }
+            });
+            
+        } catch (e) {
+            console.error("Erreur lors de l'initialisation de la carte Leaflet:", e);
+             document.getElementById('map').innerHTML = `
+                <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                    <h2 style="font-size: 2.2rem;">Erreur critique</h2>
+                    <p style="font-size: 1.6rem;">La carte n'a pas pu être chargée. (Erreur JS/initialisation).</p>
+                </div>
+            `;
+            return;
+        }
+
+    } else {
+        document.getElementById('map').innerHTML = `
+            <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                <h2 style="font-size: 2.2rem;">Erreur critique</h2>
+                <p style="font-size: 1.6rem;">La librairie cartographique Leaflet n'a pas pu être chargée. Vérifiez l'accès aux CDN.</p>
+            </div>
+        `;
+        return; 
+    }
+    
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // FONCTIONS D'UTILITÉ (inchangées)
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    
+    function standardizeChantierType(rawType) { 
+        if (!rawType) return 'Travaux de voirie générale';
+        const cleaned = String(rawType).toLowerCase().trim().replace(/\s+/g, ' ');
+        for (const mapping of TYPE_MAPPING) {
+            if (cleaned.match(mapping.regex)) {
+                return mapping.standard;
+            }
+        }
+        return 'Travaux de voirie générale';
+    }
+    
+    function normalizeCommuneName(name) { 
+      if (!name) return '';
+      return String(name).toLowerCase().trim().replace(/[\s\-\']/g, '');
+    }
+
+    function titleCaseCommune(rawName) { 
+        if (!rawName) return '';
+        const exceptions = new Set(['de', 'des', 'du', 'la', 'le', 'les', 'l\'', 'à', 'aux', 'au', 'en', 'et', 'lès', 'sur', 'sous']);
+        const lower = String(rawName).toLowerCase().trim();
+        let result = [];
+        const words = lower.split(' ');
+        
+        for (let i = 0; i < words.length; i++) {
+            let word = words[i];
+            if (word.length === 0 || (exceptions.has(word) && i > 0)) {
+                result.push(word);
+                continue;
+            }
+            let capitalizedWord = word.split('-').map((part) => {
+                if (part.length === 0 || exceptions.has(part)) {
+                   return part;
+                }
+                return part.charAt(0).toUpperCase() + part.slice(1);
+            }).join('-');
+            if (capitalizedWord.startsWith("l'") && capitalizedWord.length > 2) {
+                capitalizedWord = "L'" + capitalizedWord.charAt(2).toUpperCase() + capitalizedWord.slice(3);
+            }
+            result.push(capitalizedWord);
+        }
+        return result.join(' ');
+    }
+
+    async function loadOfficialCommunes() { 
+        if (officialCommunesLoaded) return true;
+        try {
+            const res = await fetch(OFFICIAL_COMMUNES_URL);
+            if (!res.ok) throw new Error('Erreur réseau pour les communes: ' + res.status);
+            const data = await res.json();
+            
+            data.features.forEach(f => {
+                const props = f.properties;
+                const nomOfficiel = props.nom_com; 
+                const nomNormalise = normalizeCommuneName(nomOfficiel);
+                if (nomNormalise) {
+                    officialCommunesMap.set(nomNormalise, nomOfficiel);
+                }
+                if (nomOfficiel.includes('Lyon') && props.insee_com) {
+                    const insee = String(props.insee_com);
+                    const lastTwo = insee.slice(-2); 
+                    if (lastTwo.length === 2 && lastTwo !== '38' && !isNaN(lastTwo)) { 
+                        const arr = parseInt(lastTwo, 10);
+                        if (arr >= 1 && arr <= 9) {
+                             const nomArr = `Lyon (${arr}e arrondissement)`; 
+                             officialCommunesMap.set(normalizeCommuneName(nomArr), nomArr);
+                        }
+                    }
+                }
+            });
+            officialCommunesLoaded = true;
+            return true;
+        } catch (err) {
+            console.error('Erreur de chargement des données de communes officielles :', err);
+            officialCommunesLoaded = false;
+            return false;
+        }
+    }
+
+    function cleanCommune(raw) { 
+      if (!raw) return '';
+      const nomNormalise = normalizeCommuneName(raw);
+      let result;
+
+      if (officialCommunesMap.has(nomNormalise)) {
+        result = officialCommunesMap.get(nomNormalise);
+      } else {
+        const s = String(raw).toLowerCase().trim();
+        const match = s.match(/^lyon\s*[\-\s]*0?([1-9])(?:e|ème)?$/i) || s.match(/^lyon\s*\(?0?([1-9])\)?$/i);
+        if (match) {
+            result = `Lyon (${match[1]}e arrondissement)`;
+        } else {
+            result = titleCaseCommune(raw);
+        }
+      }
+
+      let finalResult = result.replace(/Arrondissement/g, 'arrondissement');
+      // Correction des exposants
+      finalResult = finalResult.replace(/1er arrondissement/g, '1<sup>er</sup> arrondissement');
+      finalResult = finalResult.replace(/([2-9])e arrondissement/g, '$1<sup>e</sup> arrondissement');
+      
+      return finalResult;
+    }
+    
+    function calculateReferenceDate() { 
+      const selector = activeDateValue;
+      const today = new Date();
+      let refDate = new Date(today);
+      if (selector === '+1w') refDate.setDate(refDate.getDate() + 7);
+      if (selector === '+1m') refDate.setMonth(refDate.getMonth() + 1);
+      if (selector === '+6m') refDate.setMonth(refDate.getMonth() + 6);
+      if (selector === '+1y') refDate.setFullYear(refDate.getFullYear() + 1);
+      refDate.setHours(0, 0, 0, 0); 
+      return refDate;
+    }
+
+    function calculateDurationInDays(props) {
+        const debut = props.debutchantier ? new Date(props.debutchantier) : null;
+        const fin = props.finchantier ? new Date(props.finchantier) : null;
+        if (!debut || !fin || isNaN(debut) || isNaN(fin)) return null;
+        
+        const diffTime = Math.abs(fin.getTime() - debut.getTime());
+        return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    }
+
+
+    function calculateAvancement(props, dateRef) { 
+      const debut = props.debutchantier ? new Date(props.debutchantier) : null;
+      const fin = props.finchantier ? new Date(props.finchantier) : null;
+      
+      if (!debut || !fin || isNaN(debut) || isNaN(fin)) return null;
+      debut.setHours(0, 0, 0, 0);
+      fin.setHours(0, 0, 0, 0);
+
+      if (dateRef.getTime() >= fin.getTime()) return 100;
+      if (dateRef.getTime() <= debut.getTime()) return 0;
+      
+      const total = fin.getTime() - debut.getTime();
+      const elapsed = dateRef.getTime() - debut.getTime();
+      
+      return Math.min(100, Math.max(0, Math.round((elapsed / total) * 100)));
+    }
+
+    function getColorForAvancement(pct) { 
+      if (pct === null || pct === undefined || isNaN(pct)) return DEFAULT_COLOR;
+      const s = STATUS_COLORS.slice().reverse().find(x => pct >= x.threshold);
+      return s ? s.color : DEFAULT_COLOR;
+    }
+    
+    function styleChantier(feature) { 
+      const avancement = feature.properties.avancement;
+      const color = getColorForAvancement(avancement);
+      
+      return {
+        fillColor: color,
+        color: color, 
+        weight: 8, 
+        opacity: 0.8, 
+        
+        fillOpacity: 0.5, 
+        className: 'chantier-path',
+        stroke: true 
+      };
+    }
+    
+    function selectLayer(layer) { 
+        if (selectedLayer) {
+            selectedLayer.setStyle({
+                weight: 8, 
+                opacity: 0.8,
+                color: selectedLayer.feature.properties.avancement_color, 
+                className: 'chantier-path'
+            });
+            if (selectedLayer.feature.geometry.type === 'Polygon') {
+                 selectedLayer.setStyle({ fillOpacity: 0.5 });
+            }
+        }
+        
+        selectedLayer = layer;
+        
+        if (layer) {
+            const originalColor = getColorForAvancement(layer.feature.properties.avancement);
+            layer.feature.properties.avancement_color = originalColor;
+
+            layer.setStyle({
+                weight: 10, 
+                opacity: 1.0,
+                color: 'var(--lm-selected-border)', 
+                className: 'chantier-path selected-path' 
+            });
+             if (layer.feature.geometry.type === 'Polygon') {
+                 layer.setStyle({ fillOpacity: 0.0 });
+            }
+        }
+    }
+
+
+    function formatDate(dateStr) { 
+        if (!dateStr) return 'Date inconnue';
+        const date = new Date(dateStr);
+        if (isNaN(date)) return 'Date inconnue';
+        const options = { day: 'numeric', month: 'short', year: 'numeric' };
+        return date.toLocaleDateString('fr-FR', options);
+    }
+    
+    function onEachFeature(feature, layer) { 
+      const p = feature.properties || {};
+      const av = (p.avancement !== undefined) ? p.avancement : null;
+      const avColor = (av !== null && !isNaN(av)) ? getColorForAvancement(av) : DEFAULT_COLOR;
+      
+      const nomStandard = p.nomchantier_standard; 
+      const commune = p.commune1_harmonisee; 
+      
+      const dateDebutFormatee = formatDate(p.debutchantier);
+      const dateFinFormatee = formatDate(p.finchantier);
+
+      const rawAddress = p.nom || p.nomchantier || 'NOM/LIEU NON SPÉCIFIÉ'; 
+      const newHeaderText = String(rawAddress).toUpperCase(); 
+      
+      const avancementText = (av !== null) ? `${av}%` : 'Indisponible';
+      
+      const initialPopup = `
+        <h3>${newHeaderText}</h3> 
+        <p><b>Commune :</b> ${commune || 'N/A'}</p>
+        <p><b>Type de projet :</b> ${nomStandard || 'Indisponible'}</p>
+        <p><b>Période :</b> ${dateDebutFormatee} → ${dateFinFormatee}</p>
+        <p><b>Avancement :</b> <span style="color:${avColor};font-weight:bold;">${avancementText}</span></p>
+        <p style="margin-top: 1rem;"></p> 
+      `;
+      layer.bindPopup(initialPopup, {
+          closeButton: true,
+          offset: L.point(0, -10)
+      }).on('click', (e) => {
+           selectLayer(e.target);
+      });
+    }
+
+    function getNextThreshold(threshold) { 
+      const idx = STATUS_COLORS.findIndex(s => s.threshold === threshold);
+      if (idx === -1) return 101;
+      return (idx < STATUS_COLORS.length - 1) ? STATUS_COLORS[idx + 1].threshold : 101;
+    }
+    
+    function getEndColorForProgress(pct) {
+        if (pct === null || pct === undefined || isNaN(pct)) return STATUS_COLORS[0].color; 
+        const s = STATUS_COLORS.slice().reverse().find(x => pct >= x.threshold);
+        return s ? s.color : STATUS_COLORS[0].color;
+    }
+
+    function updateProgressGauge(value) { 
+      const val = Math.min(100, Math.max(0, value));
+      const startColor = STATUS_COLORS.find(s => s.threshold === 0).color;
+      const endColor = getEndColorForProgress(val);
+
+      
+      setTimeout(() => { 
+        const bar = document.getElementById('progress-bar');
+        if (bar) {
+          bar.style.width = `${val}%`;
+          bar.style.backgroundImage = `linear-gradient(to right, ${startColor} 0%, ${endColor} 100%)`;
+        }
+        const v = document.getElementById('progress-value');
+        if (v) v.textContent = `${val}%`;
+      }, 0);
+    }
+
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // FONCTIONS D'INTERFACE SPÉCIFIQUES (inchangées)
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    
+    function createDateOptions() {
+        const container = document.getElementById('time-filter');
+        container.innerHTML = ''; 
+        DATE_OPTIONS.forEach(opt => {
+            const div = document.createElement('div');
+            div.className = 'date-option' + (opt.value === activeDateValue ? ' selected' : '');
+            div.textContent = opt.label;
+            div.setAttribute('data-value', opt.value);
+            div.addEventListener('click', () => {
+                document.querySelectorAll('#map-container-wrapper .date-option').forEach(el => el.classList.remove('selected'));
+                div.classList.add('selected');
+                activeDateValue = opt.value;
+                filterMap(false); 
+            });
+            container.appendChild(div);
+        });
+    }
+
+    function createLegend() { 
+      const wrapper = document.querySelector('#legend-control .legend-wrapper');
+      wrapper.innerHTML = '';
+      
+      const allItem = document.createElement('div');
+      allItem.className = 'legend-item active';
+      allItem.id = 'legend-item-all';
+      allItem.innerHTML = `<span class="legend-color" style="background-color: transparent; border:1px dashed ${DEFAULT_COLOR};"></span> Tous les chantiers`;
+      allItem.onclick = () => setAvancementFilter('all');
+      wrapper.appendChild(allItem);
+      
+      STATUS_COLORS.forEach(s => {
+        const item = document.createElement('div');
+        item.className = 'legend-item';
+        item.id = `legend-item-${s.threshold}`;
+        const label = s.label.trim(); 
+        item.innerHTML = `<span class="legend-color" style="background-color:${s.color}; border-color:${s.color};"></span> ${label}`;
+        item.onclick = () => setAvancementFilter(s.threshold);
+        wrapper.appendChild(item);
+      });
+    }
+
+    window.setAvancementFilter = function(threshold) { 
+      activeAvancementFilter = threshold;
+      document.querySelectorAll('#map-container-wrapper .legend-item').forEach(i => i.classList.remove('active'));
+      const id = (threshold !== 'all') ? `legend-item-${threshold}` : `legend-item-${threshold}`;
+      const el = document.getElementById(id);
+      if (el) el.classList.add('active');
+      filterMap(false); 
+    };
+
+    function filterMap(resetZoom = true) { 
+      if (!chantierData) return;
+      
+      map.closePopup();
+      selectLayer(null); 
+      
+      const selectedType = document.getElementById('chantier-type-filter').value;
+      const selectedDuration = document.getElementById('duration-filter').value; 
+      const refDate = calculateReferenceDate();
+      
+      document.getElementById('current-date-display').textContent = formatDate(refDate.toISOString());
+
+      if (geoJsonLayer) {
+        currentMapBounds = map.getBounds();
+        map.removeLayer(geoJsonLayer);
+      } else {
+        currentMapBounds = map.getBounds(); 
+      }
+
+
+      const avancements = [];
+
+      const filteredFeatures = chantierData.features.filter(f => {
+        const p = f.properties;
+        
+        p.avancement = calculateAvancement(p, refDate); 
+        
+        if (p.avancement !== null && !isNaN(p.avancement)) avancements.push(p.avancement);
+
+        if (selectedType !== 'all' && p.nomchantier_standard !== selectedType) return false;
+
+        if (selectedDuration !== 'all') {
+            if (p.duree_jours === null) return false; 
+            const duration = p.duree_jours;
+            const threeMonthsDays = 91; 
+            const sixMonthsDays = 183;  
+            const oneYearDays = 365;    
+
+            switch (selectedDuration) {
+                case '<3m':
+                    if (duration >= threeMonthsDays) return false;
+                    break;
+                case '3m-6m':
+                    if (!(duration >= threeMonthsDays && duration < sixMonthsDays)) return false;
+                    break;
+                case '6m-1y':
+                    if (!(duration >= sixMonthsDays && duration < oneYearDays)) return false;
+                    break;
+                case '>1y':
+                    if (duration < oneYearDays) return false;
+                    break;
+            }
+        }
+        
+        if (activeAvancementFilter !== 'all') {
+            if (p.avancement === null) return false; 
+            
+            const threshold = parseInt(activeAvancementFilter, 10);
+            const nextThreshold = getNextThreshold(threshold);
+            if (threshold === 76) {
+                 if (!(p.avancement >= threshold && p.avancement <= 100)) return false;
+            } else {
+                 if (!(p.avancement >= threshold && p.avancement < nextThreshold)) return false;
+            }
+        }
+
+        return true;
+      });
+
+      const generalProgress = avancements.length ? Math.round(avancements.reduce((a,b)=>a+b)/avancements.length) : 0;
+      updateProgressGauge(generalProgress);
+      
+      document.getElementById('chantier-count').textContent = `${filteredFeatures.length} chantier(s) affiché(s)`;
+
+      if (filteredFeatures.length > 0) {
+          geoJsonLayer = L.geoJSON({ type: 'FeatureCollection', features: filteredFeatures }, {
+            style: styleChantier,
+            onEachFeature: onEachFeature
+          }).addTo(map);
+      } else if (geoJsonLayer) {
+          map.removeLayer(geoJsonLayer);
+          geoJsonLayer = null;
+      }
+      
+
+      // Gestion du zoom
+      if (resetZoom && geoJsonLayer && geoJsonLayer.getLayers().length > 0) {
+        map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20], maxZoom: 16 });
+      } else if (resetZoom === false && currentMapBounds) {
+        map.fitBounds(currentMapBounds, { animate: false });
+      } else if (resetZoom) {
+        map.setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
+      }
+      
+      // S'assurer que la carte est bien redimensionnée
+      map.invalidateSize(true); 
+    }
+    
+    // --------------------------------------------------------------------------------------------------------------------------------------
+    // INITIALISATION PRINCIPALE
+    // --------------------------------------------------------------------------------------------------------------------------------------
+
+    loadOfficialCommunes().then(success => {
+        if (!success) {
+             console.warn("Attention: Impossible de charger les données de référence des communes.");
+        }
+        
+        createDateOptions();
+        
+        fetch(GEOJSON_URL)
+          .then(res => {
+            if (!res.ok) throw new Error('Erreur réseau GeoServer: ' + res.status);
+            return res.json();
+          })
+          .then(data => {
+            chantierData = data;
+
+            // Pré-calcul des propriétés statiques (optimisation)
+            chantierData.features.forEach(f => {
+                const p = f.properties;
+                p.nomchantier_standard = standardizeChantierType(p.nomchantier);
+                p.commune1_harmonisee = cleanCommune(p.commune1);
+                p.duree_jours = calculateDurationInDays(p); 
+            });
+
+            const select = document.getElementById('chantier-type-filter');
+            
+            let allTypes = [...new Set(data.features.map(f => f.properties.nomchantier_standard).filter(Boolean))];
+            let sortedTypes = allTypes.sort((a,b) => {
+                if (a === 'Travaux de voirie générale') return 1;
+                if (b === 'Travaux de voirie générale') return -1;
+                return a.localeCompare(b);
+            });
+            
+            sortedTypes.forEach(t => { 
+              const opt = document.createElement('option');
+              opt.value = t;
+              opt.textContent = t;
+              select.appendChild(opt);
+            });
+
+            createLegend();
+            filterMap(true); 
+            
+            // FIX iOS: Invalide la taille une dernière fois pour être sûr
+            setTimeout(() => map.invalidateSize(true), 500); 
+          })
+          .catch(err => {
+            console.error('Erreur :', err);
+            // Affiche un message d'erreur directement dans la zone de la carte
+            document.getElementById('map').innerHTML = `
+                <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
+                    <h2 style="font-size: 2.2rem;">Erreur de chargement des données</h2>
+                    <p style="font-size: 1.6rem;">Impossible de se connecter au serveur de la Métropole de Lyon. Veuillez réessayer plus tard.</p>
+                </div>
+            `;
+            updateProgressGauge(0);
+            document.getElementById('chantier-count').textContent = `0 chantiers affichés (Données indisponibles)`;
+          });
+    });
+
+    document.getElementById('chantier-type-filter').addEventListener('change', () => filterMap(false)); 
+    document.getElementById('duration-filter').addEventListener('change', () => filterMap(false)); 
+    
+    window.addEventListener('resize', () => {
+        if (map) map.invalidateSize();
+    });
+  });
+  </script>
+</body>
+</html>
