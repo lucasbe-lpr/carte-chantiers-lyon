@@ -15,6 +15,17 @@
 
   <style>
     /* -------------------------------------------------------------------------------------------------------------------------------------- */
+    /* FIX CRITIQUE: Transmet la hauteur de l'iFrame aux balises racine */
+    /* -------------------------------------------------------------------------------------------------------------------------------------- */
+    html, body {
+        height: 100%; 
+        margin: 0; 
+        padding: 0;
+        /* Optionnel: Assure que la bonne police est chargée immédiatement */
+        font-family: 'Roboto', sans-serif; 
+    }
+    
+    /* -------------------------------------------------------------------------------------------------------------------------------------- */
     /* STYLE FINALISÉ INSPIRE DU MONDE (DA et Charte Graphique) */
     /* -------------------------------------------------------------------------------------------------------------------------------------- */
     
@@ -39,7 +50,8 @@
         color: var(--lm-dark-text); 
         box-sizing: border-box; 
         
-        /* CORRECTION: Suppression des marges et de la bordure pour un remplissage iFrame parfait */
+        /* CORRECTION: Ajout de height: 100% pour prendre toute la hauteur définie par body/html */
+        height: 100%; 
         margin: 0; 
         width: 100%; 
         max-width: none; 
@@ -49,13 +61,12 @@
         border: none; 
         border-radius: 4px; 
         background: var(--lm-white);
-        /* IMPORTANT: Passe en colonne flex pour que #map-square-wrapper puisse prendre la place restante */
+        /* IMPORTANT: Maintien du conteneur Flexbox en colonne */
         display: flex; 
         flex-direction: column;
         overflow-x: hidden; 
         position: relative; 
         z-index: 10; 
-        /* Ajout d'une hauteur pour forcer le remplissage initial dans l'iFrame */
         min-height: 100%; 
     }
 
