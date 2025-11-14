@@ -47,13 +47,16 @@
         
         box-shadow: none; 
         border: none; 
-        border-radius: 4px; /* Optionnel: Maintien du border-radius si le conteneur a une couleur de fond */
+        border-radius: 4px; 
         background: var(--lm-white);
-        display: flex;
+        /* IMPORTANT: Passe en colonne flex pour que #map-square-wrapper puisse prendre la place restante */
+        display: flex; 
         flex-direction: column;
         overflow-x: hidden; 
         position: relative; 
         z-index: 10; 
+        /* Ajout d'une hauteur pour forcer le remplissage initial dans l'iFrame */
+        min-height: 100%; 
     }
 
     /* FIX FONT ET BOX-SIZING */
@@ -77,6 +80,8 @@
       /* Padding par défaut (Desktop) */
       padding: 20px 20px 15px 20px; 
       border-bottom: 1px solid var(--lm-border-color); 
+      /* Fixe l'élément pour qu'il ne soit pas pris dans le flex-grow */
+      flex-shrink: 0; 
     }
 
     .lm-subtitle {
@@ -107,6 +112,8 @@
       align-items: center;
       border-bottom: 1px solid var(--lm-border-color);
       background-color: var(--lm-white); 
+      /* Fixe l'élément pour qu'il ne soit pas pris dans le flex-grow */
+      flex-shrink: 0; 
     }
     
     /* 🟢 Le premier groupe (Date d'observation) prend 100% de la largeur */
@@ -279,13 +286,14 @@
     }
     
     /* ------------------------------------------------------------------------------------- */
-    /* Carte Leaflet (CORRIGÉ) */
+    /* Carte Leaflet (CORRIGÉ - Hauteur) */
     /* ------------------------------------------------------------------------------------- */
     #map-square-wrapper {
         width: 100% !important;
-        /* Défaut pour desktop: hauteur fixe */
-        height: 70vh !important; 
-        min-height: 400px !important;
+        /* CORRECTION: Utilise flex-grow pour que la carte prenne l'espace restant dans l'iFrame */
+        flex-grow: 1; 
+        /* Définit une hauteur minimale si l'iFrame est très petit */
+        min-height: 400px !important; 
         position: relative;
     }
     
@@ -311,8 +319,12 @@
     }
     
     /* ------------------------------------------------------------------------------------- */
-    /* Légende, Compteur, Footer (inchangé) */
+    /* Légende, Compteur, Footer (Fixé pour ne pas être flexible) */
     /* ------------------------------------------------------------------------------------- */
+    #legend-control, #progress-gauge-module, #chantier-count, .lm-footer {
+        flex-shrink: 0; /* Ne doit pas se réduire ou s'étendre, conserve sa taille par défaut */
+    }
+    
     #legend-control {
       /* Padding par défaut (Desktop) */
       padding: 1.5rem 2rem 2rem 2rem;
@@ -465,11 +477,8 @@
         
         /* 3. HAUTEUR DE LA CARTE (CORRIGÉ) */
         #map-square-wrapper {
-            /* Fixe une hauteur relative pour les mobiles */
-            height: 60vh !important; 
-            /* Min-height réduit pour les petits téléphones */
+            /* Conserve le flex-grow: 1, mais assure une taille minimale */
             min-height: 300px !important; 
-            padding-bottom: 0 !important; 
         }
         
         /* 4. CONTRÔLES (Filtres) */
@@ -477,57 +486,54 @@
             gap: 6px; 
             padding-top: 0.6rem; 
             padding-bottom: 0.6rem; 
+            /* Permet aux groupes de passer à la ligne sur mobile */
+            flex-wrap: wrap; 
+        }
+        
+        /* CORRECTION DU DÉBORDEMENT DES FILTRES */
+        .lm-control-group {
+             /* Force chaque groupe (date, durée, type) à prendre toute la largeur sur mobile */
+            flex-basis: 100% !important; 
+            flex-direction: row; 
+            justify-content: space-between;
         }
         
         /* 5. PILULES DE DATE (Empilement vertical) */
         .lm-controls > .lm-control-group:first-child {
-            /* FIX AGRESSIF : FORCE LA COLONNE */
-            flex-direction: column !important; 
-            align-items: flex-start; /* Aligne l'étiquette à gauche */
-            justify-content: flex-start;
+            /* Revient à la normale, mais autorise le wrap */
+            flex-direction: row !important; 
+            align-items: center; 
+            justify-content: flex-start; 
+            flex-wrap: wrap;
         }
         
-        /* AJOUT: Espace sous l'étiquette pour la séparer des pilules */
+        /* AJOUT: S'assurer que les étiquettes et les sélecteurs soient bien alignés au centre verticalement */
         .lm-control-group label {
-            margin-bottom: 5px; 
+            margin-bottom: 0;
+            align-self: center; 
         }
-
+        
+        /* Le conteneur des pilules prend toute la largeur disponible pour ne pas déborder */
         .date-options {
-            /* Le conteneur sur mobile prend toute la largeur */
-            padding: 4px 6px; /* Padding ajusté */
-            border: 1px solid var(--lm-light-grey); /* Bordure légère */
-            background-color: var(--lm-light-grey);
-            border-radius: 30px; /* Conserver l'arrondi de la pilule */
+            padding: 4px 6px; 
+            border-radius: 30px; 
             flex-grow: 1; 
-            /* FIX AGRESSIF : FORCE LA PLEINE LARGEUR */
-            width: 100% !important; 
+            justify-content: space-between;
+            width: 100%; 
             margin-top: 0; 
-            gap: 6px; /* Gap ajusté pour mobile */
+            gap: 6px; 
         }
         
         .date-option {
              padding: 8px 6px; 
              height: 100%;
-             flex-grow: 1; /* Permet aux pilules de s'étirer si nécessaire */
+             /* Permet aux pilules de s'étirer équitablement dans l'espace restant */
+             flex-grow: 1; 
              flex-basis: 0;
              border-radius: 30px; 
         }
+        /* Fin de correction du débordement des filtres */
 
-        /* On retire les séparateurs internes car le fond les délimite */
-        .date-option:not(:last-child) {
-            border-right: none; 
-        }
-        
-        .date-option.selected {
-             background-color: var(--lm-blue); 
-             color: white; 
-        }
-        
-        .date-option:active:not(.selected),
-        .date-option:hover:not(.selected) {
-             /* Couleur de survol plus visible sur le fond gris clair */
-             background-color: #cdd3dc; 
-        }
 
         /* 6. COMPRESSION DE LA LÉGENDE */
         .legend-info {
