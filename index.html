@@ -21,7 +21,6 @@
         height: 100%; 
         margin: 0; 
         padding: 0;
-        /* Optionnel: Assure que la bonne police est chargée immédiatement */
         font-family: 'Roboto', sans-serif; 
     }
     
@@ -42,26 +41,23 @@
     }
 
     /* *************************************************************** */
-    /* ENCAPSULATION DES STYLES - CORRIGÉ POUR L'IFRAME */
+    /* ENCAPSULATION DES STYLES */
     /* *************************************************************** */
     
     #map-container-wrapper {
+        /* BASE DE CALCULE 1rem = 10px sur PC */
         font-size: 62.5%; 
         color: var(--lm-dark-text); 
         box-sizing: border-box; 
-        
-        /* CORRECTION: Ajout de height: 100% pour prendre toute la hauteur définie par body/html */
         height: 100%; 
         margin: 0; 
         width: 100%; 
         max-width: none; 
         padding: 0; 
-        
         box-shadow: none; 
         border: none; 
         border-radius: 4px; 
         background: var(--lm-white);
-        /* IMPORTANT: Maintien du conteneur Flexbox en colonne */
         display: flex; 
         flex-direction: column;
         overflow-x: hidden; 
@@ -88,17 +84,14 @@
     }
     
     .lm-header {
-      /* Padding par défaut (Desktop) */
       padding: 20px 20px 15px 20px; 
       border-bottom: 1px solid var(--lm-border-color); 
-      /* Fixe l'élément pour qu'il ne soit pas pris dans le flex-grow */
       flex-shrink: 0; 
     }
 
     .lm-subtitle {
       font-size: 1.5rem; 
       font-weight: 400;
-      /* Marge réduite par rapport à la version précédente */
       margin: 0 0 0.4rem 0; 
       line-height: 1.4; 
       color: var(--lm-text-muted);
@@ -115,7 +108,6 @@
     /* Filtres/Contrôles (Général) */
     /* ------------------------------------------------------------------------------------- */
     .lm-controls {
-      /* Padding par défaut (Desktop) */
       padding: 1.5rem 2rem; 
       display: flex;
       flex-wrap: wrap;
@@ -123,18 +115,15 @@
       align-items: center;
       border-bottom: 1px solid var(--lm-border-color);
       background-color: var(--lm-white); 
-      /* Fixe l'élément pour qu'il ne soit pas pris dans le flex-grow */
       flex-shrink: 0; 
     }
     
-    /* 🟢 Le premier groupe (Date d'observation) prend 100% de la largeur */
     .lm-controls > .lm-control-group:first-child {
         width: 100%;
         justify-content: flex-start; 
         flex-direction: row; 
     }
     
-    /* Les autres groupes doivent être flexibles */
     .lm-controls > .lm-control-group:not(:first-child) {
         flex-grow: 1; 
         flex-basis: 0;
@@ -156,7 +145,6 @@
       flex-shrink: 0; 
     }
     
-    /* Style pour la date exacte affichée */
     .lm-control-group #current-date-display {
         font-weight: 700;
         color: var(--lm-blue);
@@ -184,8 +172,7 @@
     /* PILULES DE DATE (Toggle Style Le Monde) - DESKTOP */
     /* ------------------------------------------------------------------------------------- */
     .date-options {
-        /* Inspiré de .lmui-tabs-wrapper */
-        border-radius: 30px; /* Grande courbure */
+        border-radius: 30px; 
         overflow: hidden;
         flex-grow: 1;
         max-width: none; 
@@ -194,60 +181,44 @@
         display: flex;
         flex-direction: row; 
         align-items: center; 
-        
         flex-wrap: nowrap; 
         justify-content: flex-start;
-        
-        /* Style du wrapper */
-        background: var(--lm-light-grey); /* Fond pour les séparations */
+        background: var(--lm-light-grey); 
         border: 1px solid var(--lm-light-grey); 
         box-shadow: none; 
-        
-        /* Padding et gap */
         padding: 6px 8px; 
-        gap: 8px; /* Espace entre chaque pilule */
+        gap: 8px; 
     }
     
     .date-option {
         display: flex;
         justify-content: center; 
         align-items: center;     
-        
-        /* Les pilules ne s'étirent plus, elles s'adaptent à leur contenu */
         flex-grow: 0; 
         flex-shrink: 0; 
         flex-basis: auto;
-        
         font-weight: 500; 
         color: var(--lm-dark-text); 
         cursor: pointer;
-        text-align: center;
         transition: background-color 0.1s, color 0.1s, box-shadow 0.1s, opacity 0.1s;
-        position: relative;
         white-space: nowrap; 
         min-width: 0;
-        
-        /* Style de la pilule interne */
         background-color: transparent;
-        padding: 6px 14px; /* Padding suffisant */
-        border-radius: 30px; /* Grande courbure */
+        padding: 6px 14px; 
+        border-radius: 30px; 
         font-size: 1.3rem; 
-        
         margin: 0; 
     }
     
-    /* On retire les règles d'arrondis sur les extrémités car c'est le conteneur qui le gère */
     .date-option:first-child,
     .date-option:last-child { 
         border-radius: 30px; 
     }
 
-    /* On retire tous les séparateurs internes */
     .date-option:not(:last-child) {
         border-right: none; 
     }
     
-    /* État sélectionné (La pilule prend une couleur pleine) */
     .date-option.selected {
         color: white; 
         background-color: var(--lm-blue); 
@@ -257,15 +228,14 @@
     
     .date-option:active:not(.selected),
     .date-option:hover:not(.selected) {
-        background-color: #f0f4f9; /* Survol léger pour le feedback */
+        background-color: #f0f4f9; 
         box-shadow: none; 
     }
 
     /* ------------------------------------------------------------------------------------- */
-    /* Styles spécifiques pour le Popup Leaflet (inchangé) */
+    /* Styles spécifiques pour le Popup Leaflet */
     /* ------------------------------------------------------------------------------------- */
     
-    /* Supprime le pointeur du popup */
     .leaflet-popup-tip-container {
         display: none;
     }
@@ -275,13 +245,12 @@
         border-radius: 6px; 
     }
     
-    /* ⭐️ AJOUT: Augmente la largeur maximale du popup sur PC */
     .leaflet-popup-content {
         max-width: 450px !important; 
     }
     
     .leaflet-popup-content h3 {
-        font-size: 1.7rem;
+        font-size: 1.7rem; /* 17px sur PC */
         font-weight: 700;
         margin: 0 0 5px 0;
         color: var(--lm-blue);
@@ -291,19 +260,17 @@
     }
     
     .leaflet-popup-content p {
-        font-size: 1.3rem;
+        font-size: 1.3rem; /* 13px sur PC */
         margin: 5px 0;
         line-height: 1.5;
     }
     
     /* ------------------------------------------------------------------------------------- */
-    /* Carte Leaflet (CORRIGÉ - Hauteur) */
+    /* Carte Leaflet */
     /* ------------------------------------------------------------------------------------- */
     #map-square-wrapper {
         width: 100% !important;
-        /* CORRECTION: Utilise flex-grow pour que la carte prenne l'espace restant dans l'iFrame */
         flex-grow: 1; 
-        /* Définit une hauteur minimale si l'iFrame est très petit */
         min-height: 400px !important; 
         position: relative;
     }
@@ -322,7 +289,6 @@
         background: rgba(255, 255, 255, 0.85); 
     }
     
-    /* Style pour le tracé sélectionné */
     .leaflet-pane .leaflet-overlay-pane path.selected-path {
         border-color: var(--lm-selected-border) !important;
         opacity: 0.9 !important;
@@ -330,14 +296,13 @@
     }
     
     /* ------------------------------------------------------------------------------------- */
-    /* Légende, Compteur, Footer (Fixé pour ne pas être flexible) */
+    /* Légende, Compteur, Footer */
     /* ------------------------------------------------------------------------------------- */
     #legend-control, #progress-gauge-module, #chantier-count, .lm-footer {
-        flex-shrink: 0; /* Ne doit pas se réduire ou s'étendre, conserve sa taille par défaut */
+        flex-shrink: 0; 
     }
     
     #legend-control {
-      /* Padding par défaut (Desktop) */
       padding: 1.5rem 2rem 2rem 2rem;
       background-color: var(--lm-white);
       border-top: 1px solid var(--lm-border-color); 
@@ -377,7 +342,6 @@
     }
 
     #progress-gauge-module {
-        /* Padding par défaut (Desktop) */
         padding: 1.2rem 2rem;
         text-align: center;
         border-top: 1px solid var(--lm-border-color);
@@ -386,7 +350,6 @@
         overflow: hidden; 
     }
     
-    /* CORRECTION : Conteneur relatif pour un positionnement absolu fiable */
     .progress-bar-wrap {
       width: 100%;
       height: 10px; 
@@ -394,10 +357,9 @@
       border-radius: 5px;
       margin: 0.5rem 0;
       overflow: hidden;
-      position: relative; /* Clé pour le positionnement absolu */
+      position: relative; 
     }
     
-    /* CORRECTION : Positionnement absolu pour respecter les limites du parent */
     .progress-bar {
         position: absolute; 
         top: 0;
@@ -416,7 +378,6 @@
         font-weight: 500; 
         font-size: 1.5rem;
         text-align: center;
-        /* Padding/Margin par défaut (Desktop) */
         margin: 1rem 0 0 0;
         padding: 1rem 2rem; 
         border-top: 1px solid var(--lm-border-color); 
@@ -428,7 +389,6 @@
         justify-content: space-between;
         align-items: center;
         font-size: 1.1rem; 
-        /* Padding par défaut (Desktop) */
         padding: 10px 20px; 
         color: var(--lm-text-muted);
         border-top: 1px solid var(--lm-border-color);
@@ -448,7 +408,7 @@
     }
 
     /* ------------------------------------------------------------------------------------- */
-    /* RESPONSIVE DESIGN (Mobile) - AJUSTEMENTS POUR L'ÉQUILIBRE VISUEL */
+    /* RESPONSIVE DESIGN (Mobile) - TAILLES REDUITES */
     /* ------------------------------------------------------------------------------------- */
     @media (max-width: 768px) {
         #map-container-wrapper {
@@ -459,72 +419,81 @@
             border-bottom: none;
         }
         
-        /* 1. DENSITÉ MAXIMALE : Réduction du padding horizontal de 15px à 10px */
+        /* 1. DENSITÉ MAXIMALE : Réduction du padding horizontal */
         .lm-header, .lm-controls, #legend-control, #progress-gauge-module, #chantier-count, .lm-footer {
             padding-left: 10px !important; 
             padding-right: 10px !important; 
         }
         
-        /* 2. EN-TÊTE: RELAXATION LÉGÈRE DU SERRAGE VERTICAL */
+        /* 2. EN-TÊTE: RÉDUCTION DES TAILLES DE POLICE (plus compactes) */
         .lm-header {
             padding-top: 8px; 
             padding-bottom: 6px; 
         }
         
         .lm-title {
-            font-size: 2.0rem; 
+            /* 18px */
+            font-size: 1.8rem; 
             margin-bottom: 0.4rem; 
         }
         .lm-subtitle {
-            font-size: 1.3rem; 
+             /* 12px */
+            font-size: 1.2rem; 
             margin: 0 0 0.3rem 0; 
             line-height: 1.3; 
         }
         .lm-validity {
+            /* 10px */
             font-size: 1.0rem; 
             margin: 0; 
             line-height: 1.3; 
         }
         
-        /* 3. HAUTEUR DE LA CARTE (CORRIGÉ) */
+        /* 3. POPUPS LEAFLET (CRITIQUE pour le mobile) */
+        .leaflet-popup-content h3 {
+            /* 14px */
+            font-size: 1.4rem;
+            margin: 0 0 4px 0;
+            padding-bottom: 4px;
+        }
+        
+        .leaflet-popup-content p {
+             /* 12px */
+            font-size: 1.2rem;
+            margin: 4px 0;
+        }
+        
+        /* 4. HAUTEUR MINIMALE DE LA CARTE */
         #map-square-wrapper {
-            /* Conserve le flex-grow: 1, mais assure une taille minimale */
             min-height: 300px !important; 
         }
         
-        /* 4. CONTRÔLES (Filtres) */
+        /* 5. CONTRÔLES (Filtres) */
         .lm-controls {
             gap: 6px; 
             padding-top: 0.6rem; 
             padding-bottom: 0.6rem; 
-            /* Permet aux groupes de passer à la ligne sur mobile */
             flex-wrap: wrap; 
         }
         
-        /* CORRECTION DU DÉBORDEMENT DES FILTRES */
         .lm-control-group {
-             /* Force chaque groupe (date, durée, type) à prendre toute la largeur sur mobile */
             flex-basis: 100% !important; 
             flex-direction: row; 
             justify-content: space-between;
         }
         
-        /* 5. PILULES DE DATE (Empilement vertical) */
         .lm-controls > .lm-control-group:first-child {
-            /* Revient à la normale, mais autorise le wrap */
             flex-direction: row !important; 
             align-items: center; 
             justify-content: flex-start; 
             flex-wrap: wrap;
         }
         
-        /* AJOUT: S'assurer que les étiquettes et les sélecteurs soient bien alignés au centre verticalement */
         .lm-control-group label {
             margin-bottom: 0;
             align-self: center; 
         }
         
-        /* Le conteneur des pilules prend toute la largeur disponible pour ne pas déborder */
         .date-options {
             padding: 4px 6px; 
             border-radius: 30px; 
@@ -538,13 +507,10 @@
         .date-option {
              padding: 8px 6px; 
              height: 100%;
-             /* Permet aux pilules de s'étirer équitablement dans l'espace restant */
              flex-grow: 1; 
              flex-basis: 0;
              border-radius: 30px; 
         }
-        /* Fin de correction du débordement des filtres */
-
 
         /* 6. COMPRESSION DE LA LÉGENDE */
         .legend-info {
@@ -572,7 +538,6 @@
             gap: 4px; 
             padding-top: 6px; 
             padding-bottom: 6px; 
-            
             font-size: 1.0rem; 
         }
     }
@@ -648,7 +613,6 @@
   let map = null; 
   let chantierData = null; 
   
-  // NOUVELLE FONCTION D'INITIALISATION DE LA CARTE
   function initializeMap() {
       if (typeof L === 'undefined') {
           console.error("Leaflet n'est pas chargé.");
@@ -662,22 +626,23 @@
       }
       
       try {
-          if (map) { map.remove(); map = null; } // Nettoyage agressif au cas où
+          if (map) { map.remove(); map = null; } 
           
-          map = L.map('map').setView([45.75, 4.85], 13.5);
+          const LYON_CENTER = [45.75, 4.85];
+          const DEFAULT_ZOOM_LEVEL = 13.5;
+          
+          map = L.map('map').setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
           
           L.Path.mergeOptions({ smoothFactor: 1.0 });
 
           // Tente une première invalidation de taille (très important pour les conteneurs flex)
           map.invalidateSize(true);
       
-          // FOND DE CARTE : CartoDB Positron (Blanc/Clair)
           L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}.png', {
             maxZoom: 18,
             attribution: '© OpenStreetMap contributors, © CARTO'
           }).addTo(map);
 
-          // Écouteur de clic sur la carte pour désélectionner
           map.on('click', (e) => {
               if (!e.originalEvent.target.classList.contains('leaflet-interactive')) {
                   map.closePopup();
@@ -685,7 +650,6 @@
               }
           });
           
-          // FIX Agressif : Assure que la taille est bonne après le chargement du fond de carte
           map.on('baselayerchange', () => map.invalidateSize(true));
           
           return true;
@@ -742,8 +706,6 @@
     ];
     
     const DEFAULT_COLOR = '#999999'; 
-    const LYON_CENTER = [45.75, 4.85]; 
-
     const DATE_OPTIONS = [
         { value: 'today', label: 'Auj.' },
         { value: '+1w', label: '1 sem.' },
@@ -862,7 +824,6 @@
       }
 
       let finalResult = result.replace(/Arrondissement/g, 'arrondissement');
-      // Correction des exposants
       finalResult = finalResult.replace(/1er arrondissement/g, '1<sup>er</sup> arrondissement');
       finalResult = finalResult.replace(/([2-9])e arrondissement/g, '$1<sup>e</sup> arrondissement');
       
@@ -1178,15 +1139,17 @@
       
 
       // Gestion du zoom
+      const LYON_CENTER = [45.75, 4.85];
+      const DEFAULT_ZOOM_LEVEL = 13.5;
+      
       if (resetZoom && geoJsonLayer && geoJsonLayer.getLayers().length > 0) {
         map.fitBounds(geoJsonLayer.getBounds(), { padding: [20, 20], maxZoom: 16 });
       } else if (resetZoom === false && currentMapBounds) {
         map.fitBounds(currentMapBounds, { animate: false });
       } else if (resetZoom) {
-        map.setView(LYON_CENTER, 13.5);
+        map.setView(LYON_CENTER, DEFAULT_ZOOM_LEVEL);
       }
       
-      // S'assurer que la carte est bien redimensionnée
       map.invalidateSize(true); 
     }
     
@@ -1194,10 +1157,9 @@
     // INITIALISATION PRINCIPALE
     // --------------------------------------------------------------------------------------------------------------------------------------
     
-    // NOUVEAU: Initialisation de la carte dans un délai (évite les problèmes de taille d'iFrame)
+    // Initialisation de la carte dans un délai (meilleure compatibilité iFrame)
     setTimeout(() => {
         if (!initializeMap()) {
-             // Si la carte n'a pas pu s'initialiser, on s'arrête là
              return; 
         }
 
@@ -1216,7 +1178,6 @@
               .then(data => {
                 chantierData = data;
 
-                // Pré-calcul des propriétés statiques (optimisation)
                 chantierData.features.forEach(f => {
                     const p = f.properties;
                     p.nomchantier_standard = standardizeChantierType(p.nomchantier);
@@ -1243,14 +1204,13 @@
                 createLegend();
                 filterMap(true); 
                 
-                // FIX DÉFINITIF : S'assurer que la carte est bien redimensionnée une dernière fois après le chargement des données
+                // DERNIÈRE INVALIDATION AGRESSIVE pour le bug du bloc gris
                 setTimeout(() => {
                     if (map) map.invalidateSize(true);
-                }, 100); 
+                }, 300); 
               })
               .catch(err => {
                 console.error('Erreur :', err);
-                // Affiche un message d'erreur directement dans la zone de la carte
                 document.getElementById('map').innerHTML = `
                     <div style="padding: 40px; text-align: center; color: var(--red-vigilance);">
                         <h2 style="font-size: 2.2rem;">Erreur de chargement des données</h2>
@@ -1259,13 +1219,9 @@
                 `;
                 updateProgressGauge(0);
                 document.getElementById('chantier-count').textContent = `0 chantiers affichés (Données indisponibles)`;
-                // Assure que les éléments du bas s'affichent même sans données
-                document.getElementById('legend-control').style.display = 'block';
-                document.getElementById('progress-gauge-module').style.display = 'block';
-                document.getElementById('chantier-count').style.display = 'block';
               });
         });
-    }, 100); // Laisse 100ms au DOM pour se stabiliser dans l'iFrame
+    }, 100); 
 
     document.getElementById('chantier-type-filter').addEventListener('change', () => filterMap(false)); 
     document.getElementById('duration-filter').addEventListener('change', () => filterMap(false)); 
